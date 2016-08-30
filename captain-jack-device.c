@@ -21,21 +21,21 @@
 	#define FourCCToCString(the4CC) { ((char*)&the4CC)[3], ((char*)&the4CC)[2], ((char*)&the4CC)[1], ((char*)&the4CC)[0], 0 }
 #endif
 
-#if DEBUG
+#if DEBUG_SYSLOG
 
 #define DebugMsg(inFormat, ...) syslog(LOG_NOTICE, inFormat, ## __VA_ARGS__)
 
-#define FailIf(inCondition, inHandler, inMessage)                                   \
+#define FailIf(inCondition, inHandler, inFormat, ...)                               \
 	if(inCondition)                                                             \
 	{                                                                           \
-		DebugMsg(inMessage);                                                \
+		DebugMsg(inFormat, ## __VA_ARGS__);                                 \
 		goto inHandler;                                                     \
 	}
 
-#define FailWithAction(inCondition, inAction, inHandler, inMessage)                 \
+#define FailWithAction(inCondition, inAction, inHandler, inFormat, ...)             \
 	if(inCondition)                                                             \
 	{                                                                           \
-		DebugMsg(inMessage);                                                \
+		DebugMsg(inFormat, ## __VA_ARGS__);                                 \
 		{ inAction; }                                                       \
 		goto inHandler;                                                     \
 	}
@@ -44,13 +44,13 @@
 
 #define DebugMsg(inFormat, ...)
 
-#define FailIf(inCondition, inHandler, inMessage)                                   \
+#define FailIf(inCondition, inHandler, inFormat, ...)                               \
 	if(inCondition)                                                             \
 	{                                                                           \
 		goto inHandler;                                                     \
 	}
 
-#define FailWithAction(inCondition, inAction, inHandler, inMessage)                 \
+#define FailWithAction(inCondition, inAction, inHandler, inFormat, ...)             \
 	if(inCondition)                                                             \
 	{                                                                           \
 		{ inAction; }                                                       \
@@ -144,6 +144,9 @@ static bool                     gMute_Output_Master_Value       = false;
 static UInt32                   gDataSource_Input_Master_Value  = 0;
 static UInt32                   gDataSource_Output_Master_Value = 0;
 
+static const char              *gJack_Client_Name               = "Captain Jack";
+static jack_client_t           *gJack_Client                    = NULL;
+
 #pragma mark -
 #pragma mark AudioServerPlugInDriverInterface Implementation
 
@@ -202,6 +205,8 @@ static OSStatus     CaptainJack_IsControlPropertySettable(AudioServerPlugInDrive
 static OSStatus     CaptainJack_GetControlPropertyDataSize(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, UInt32 inQualifierDataSize, const void *inQualifierData, UInt32 *outDataSize);
 static OSStatus     CaptainJack_GetControlPropertyData(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, UInt32 inQualifierDataSize, const void *inQualifierData, UInt32 inDataSize, UInt32 *outDataSize, void *outData);
 static OSStatus     CaptainJack_SetControlPropertyData(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, UInt32 inQualifierDataSize, const void *inQualifierData, UInt32 inDataSize, const void *inData, UInt32 *outNumberPropertiesChanged, AudioObjectPropertyAddress outChangedAddresses[2]);
+
+static _Bool        CaptainJack_ConnectJackd(void);
 
 #pragma mark The Interface
 
@@ -390,6 +395,10 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 	Float64 theHostClockFrequency = theTimeBaseInfo.denom / theTimeBaseInfo.numer;
 	theHostClockFrequency *= 1000000000.0;
 	gDevice_HostTicksPerFrame = theHostClockFrequency / gDevice_SampleRate;
+
+	// Start Jack
+	FailWithAction(strlen(gJack_Client_Name) > (unsigned) jack_client_name_size(), theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_Initialize: \"%s\" is longer than JACK's allowed client name length", gJack_Client_Name);
+	FailIf(!CaptainJack_ConnectJackd(), Done, "CaptainJack_Initialize: JACK client open operation failed; check status above");
 Done:
 	return theAnswer;
 }
@@ -405,8 +414,6 @@ static OSStatus CaptainJack_CreateDevice(AudioServerPlugInDriverRef inDriver, CF
 	//  check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_CreateDevice: bad driver reference");
 
-	// Initialize JACK
-	DebugMsg("CaptainJack_CreateDevice: creating device");
 Done:
 	return theAnswer;
 }
@@ -435,6 +442,9 @@ static OSStatus CaptainJack_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
 	//  check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_AddDeviceClient: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_AddDeviceClient: bad device ID");
+
+	DebugMsg("client added");
+	FailIf(!CaptainJack_ConnectJackd(), Done, "CaptainJack_Initialize: JACK client open operation failed; check status above");
 Done:
 	return theAnswer;
 }
@@ -449,6 +459,9 @@ static OSStatus CaptainJack_RemoveDeviceClient(AudioServerPlugInDriverRef inDriv
 	//  check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_RemoveDeviceClient: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_RemoveDeviceClient: bad device ID");
+
+
+	DebugMsg("client removed");
 Done:
 	return theAnswer;
 }
@@ -3545,6 +3558,9 @@ static OSStatus CaptainJack_StartIO(AudioServerPlugInDriverRef inDriver, AudioOb
 
 	//  unlock the state lock
 	pthread_mutex_unlock(&gPlugIn_StateMutex);
+
+	DebugMsg("IO has started");
+	FailWithAction(!CaptainJack_ConnectJackd(), theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_Initialize: JACK client open operation failed; check status above");
 Done:
 	return theAnswer;
 }
@@ -3575,6 +3591,8 @@ static OSStatus CaptainJack_StopIO(AudioServerPlugInDriverRef inDriver, AudioObj
 
 	//  unlock the state lock
 	pthread_mutex_unlock(&gPlugIn_StateMutex);
+
+	DebugMsg("IO has stopped");
 Done:
 	return theAnswer;
 }
@@ -3705,4 +3723,38 @@ static OSStatus CaptainJack_EndIOOperation(AudioServerPlugInDriverRef inDriver, 
 	FailWithAction(inDeviceObjectID != kObjectID_Device, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_EndIOOperation: bad device ID");
 Done:
 	return theAnswer;
+}
+
+
+static _Bool CaptainJack_ConnectJackd(void) {
+	if (gJack_Client != NULL) {
+		// this function will be called many times on different operations
+		// to give the facade of a perpetual retry; which means it might
+		// be called even if it's already connected.
+		return 1;
+	}
+
+	DebugMsg("attempting to connect to JACK");
+	jack_status_t status = 0;
+	gJack_Client = jack_client_open(gJack_Client_Name, JackNullOption, &status);
+	DebugMsg("status: JackFailure=%d JackInvalidOption=%d JackNameNotUnique=%d JackServerStarted=%d JackServerFailed=%d JackServerError=%d JackNoSuchClient=%d JackLoadFailure=%d JackInitFailure=%d JackShmFailure=%d JackVersionError=%d JackBackendError=%d JackClientZombie=%d",
+			!!(status & JackFailure),
+			!!(status & JackInvalidOption),
+			!!(status & JackNameNotUnique),
+			!!(status & JackServerStarted),
+			!!(status & JackServerFailed),
+			!!(status & JackServerError),
+			!!(status & JackNoSuchClient),
+			!!(status & JackLoadFailure),
+			!!(status & JackInitFailure),
+			!!(status & JackShmFailure),
+			!!(status & JackVersionError),
+			!!(status & JackBackendError),
+			!!(status & JackClientZombie));
+
+	if (gJack_Client != NULL) {
+		DebugMsg("connected to JACK successfully");
+	}
+
+	return gJack_Client != NULL;
 }
