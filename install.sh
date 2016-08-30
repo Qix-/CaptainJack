@@ -3,7 +3,7 @@ set -e
 
 DRIVER_NAME=NullAudio.driver
 
-[ -d "/Library/Audio/Plug-Ins/HAL/${DRIVER_NAME}" ] && echo "removing existing installation" && sudo rm -rvf "/Library/Audio/Plug-Ins/HAL/${DRIVER_NAME}"
+[ -d "/Library/Audio/Plug-Ins/HAL/${DRIVER_NAME}" ] && echo "removing existing installation" && sudo rm -rvf "/Library/Audio/Plug-Ins/HAL/${DRIVER_NAME}" && sudo pkill coreaudio
 
 echo "installing"
 sudo cp -vr "./${DRIVER_NAME}" "/Library/Audio/Plug-Ins/HAL/${DRIVER_NAME}"

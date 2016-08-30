@@ -29,7 +29,7 @@
 	<key>CFPlugInFactories</key>
 	<dict>
 		<key>99A15A8B-DA3C-42C3-BD5D-D035A0C2377A</key>
-		<string>NullAudio_Create</string>
+		<string>CaptainJack_Create</string>
 	</dict>
 	<key>CFPlugInTypes</key>
 	<dict>
