@@ -11,6 +11,8 @@ if (CAPTAINJACK_DEBUG)
 	add_definitions (-DDEBUG)
 endif ()
 
+add_definitions (-Wall -Wextra -Werror)
+
 add_executable (captain-jack ${SRC})
 set_target_properties (captain-jack PROPERTIES LINK_FLAGS -bundle)
 target_link_libraries (captain-jack "-framework CoreFoundation")
