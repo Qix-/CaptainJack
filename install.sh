@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-DRIVER_NAME=NullAudio.driver
+DRIVER_NAME=CaptainJack.driver
 
 [ -d "/Library/Audio/Plug-Ins/HAL/${DRIVER_NAME}" ] && echo "removing existing installation" && sudo rm -rvf "/Library/Audio/Plug-Ins/HAL/${DRIVER_NAME}" && sudo pkill coreaudio
 
