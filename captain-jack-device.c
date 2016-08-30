@@ -140,8 +140,6 @@ static Float32                  gVolume_Output_Master_Value     = 0.0;
 static bool                     gMute_Input_Master_Value        = false;
 static bool                     gMute_Output_Master_Value       = false;
 
-static const UInt32             kDataSource_NumberItems         = 4;
-#define                         kDataSource_ItemNamePattern     "Data Source Item %d"
 static UInt32                   gDataSource_Input_Master_Value  = 0;
 static UInt32                   gDataSource_Output_Master_Value = 0;
 
@@ -2989,7 +2987,7 @@ static OSStatus CaptainJack_GetControlPropertyDataSize(AudioServerPlugInDriverRe
 			break;
 
 		case kAudioSelectorControlPropertyAvailableItems:
-			*outDataSize = kDataSource_NumberItems * sizeof(UInt32);
+			*outDataSize = 0;
 			break;
 
 		case kAudioSelectorControlPropertyItemName:
@@ -3013,7 +3011,7 @@ Done:
 }
 
 static OSStatus CaptainJack_GetControlPropertyData(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, UInt32 inQualifierDataSize, const void *inQualifierData, UInt32 inDataSize, UInt32 *outDataSize, void *outData) {
-#pragma unused(inClientProcessID)
+#pragma unused(inClientProcessID, inQualifierDataSize, inQualifierData)
 	//  declare the local variables
 	OSStatus theAnswer = 0;
 	UInt32 theNumberItemsToFetch;
@@ -3277,11 +3275,6 @@ static OSStatus CaptainJack_GetControlPropertyData(AudioServerPlugInDriverRef in
 			//  case, only that number of items will be returned
 			theNumberItemsToFetch = inDataSize / sizeof(UInt32);
 
-			//  clamp it to the number of items we have
-			if(theNumberItemsToFetch > kDataSource_NumberItems) {
-				theNumberItemsToFetch = kDataSource_NumberItems;
-			}
-
 			//  fill out the return array
 			for(theItemIndex = 0; theItemIndex < theNumberItemsToFetch; ++theItemIndex) {
 				((UInt32 *)outData)[theItemIndex] = theItemIndex;
@@ -3293,11 +3286,7 @@ static OSStatus CaptainJack_GetControlPropertyData(AudioServerPlugInDriverRef in
 
 		case kAudioSelectorControlPropertyItemName:
 			//  This returns the user-readable name for the selector item in the qualifier
-			FailWithAction(inDataSize < sizeof(CFStringRef), theAnswer = kAudioHardwareBadPropertySizeError, Done, "CaptainJack_GetControlPropertyData: not enough space for the return value of kAudioSelectorControlPropertyItemName for the data source control");
-			FailWithAction(inQualifierDataSize != sizeof(UInt32), theAnswer = kAudioHardwareBadPropertySizeError, Done, "CaptainJack_GetControlPropertyData: wrong size for the qualifier of kAudioSelectorControlPropertyItemName for the data source control");
-			FailWithAction(*((const UInt32 *)inQualifierData) >= kDataSource_NumberItems, theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_GetControlPropertyData: the item in the qualifier is not valid for kAudioSelectorControlPropertyItemName for the data source control");
-			*((CFStringRef *)outData) = CFStringCreateWithFormat(NULL, NULL, CFSTR(kDataSource_ItemNamePattern), *((const UInt32 *)inQualifierData));
-			*outDataSize = sizeof(CFStringRef);
+			FailWithAction(true, theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_GetControlPropertyData: the item in the qualifier is not valid for kAudioSelectorControlPropertyItemName for the data source control");
 			break;
 
 		default:
@@ -3473,7 +3462,7 @@ static OSStatus CaptainJack_SetControlPropertyData(AudioServerPlugInDriverRef in
 			//  For selector controls, we check to make sure the requested value is in the
 			//  available items list and just store the value.
 			FailWithAction(inDataSize != sizeof(UInt32), theAnswer = kAudioHardwareBadPropertySizeError, Done, "CaptainJack_SetControlPropertyData: wrong size for the data for kAudioSelectorControlPropertyCurrentItem");
-			FailWithAction(*((const UInt32 *)inData) >= kDataSource_NumberItems, theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_SetControlPropertyData: requested item not in available items list for kAudioSelectorControlPropertyCurrentItem");
+			FailWithAction(true, theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_SetControlPropertyData: requested item not in available items list for kAudioSelectorControlPropertyCurrentItem");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 
 			if(inObjectID == kObjectID_DataSource_Input_Master) {
