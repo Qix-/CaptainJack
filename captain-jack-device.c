@@ -1,58 +1,9 @@
 /*
-     File: CaptainJack.c
-    Abstract:  Part of CaptainJack Driver Example
-    Version: 1.0.1
+    Captain Jack, a Jack-enabled audio I/O device.
 
-    Disclaimer: IMPORTANT:  This Apple software is supplied to you by Apple
-    Inc. ("Apple") in consideration of your agreement to the following
-    terms, and your use, installation, modification or redistribution of
-    this Apple software constitutes acceptance of these terms.  If you do
-    not agree with these terms, please do not use, install, modify or
-    redistribute this Apple software.
-
-    In consideration of your agreement to abide by the following terms, and
-    subject to these terms, Apple grants you a personal, non-exclusive
-    license, under Apple's copyrights in this original Apple software (the
-    "Apple Software"), to use, reproduce, modify and redistribute the Apple
-    Software, with or without modifications, in source and/or binary forms;
-    provided that if you redistribute the Apple Software in its entirety and
-    without modifications, you must retain this notice and the following
-    text and disclaimers in all such redistributions of the Apple Software.
-    Neither the name, trademarks, service marks or logos of Apple Inc. may
-    be used to endorse or promote products derived from the Apple Software
-    without specific prior written permission from Apple.  Except as
-    expressly stated in this notice, no other rights or licenses, express or
-    implied, are granted by Apple herein, including but not limited to any
-    patent rights that may be infringed by your derivative works or by other
-    works in which the Apple Software may be incorporated.
-
-    The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
-    MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
-    THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
-    FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
-    OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
-
-    IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
-    OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-    INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
-    MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
-    AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
-    STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE.
-
-    Copyright (C) 2013 Apple Inc. All Rights Reserved.
-
+    Heavily based on Apple's NullDevice example.
 */
-/*  ==================================================================================================
-    CaptainJack.c
-    ==================================================================================================*/
 
-//==================================================================================================
-//  Includes
-//==================================================================================================
-
-//  System Includes
 #include <CoreAudio/AudioServerPlugIn.h>
 #include <dispatch/dispatch.h>
 #include <mach/mach_time.h>
@@ -60,10 +11,8 @@
 #include <stdint.h>
 #include <sys/syslog.h>
 
-//==================================================================================================
 #pragma mark -
 #pragma mark Macros
-//==================================================================================================
 
 #if TARGET_RT_BIG_ENDIAN
 	#define FourCCToCString(the4CC) { ((char*)&the4CC)[0], ((char*)&the4CC)[1], ((char*)&the4CC)[2], ((char*)&the4CC)[3], 0 }
@@ -78,16 +27,16 @@
 #define FailIf(inCondition, inHandler, inMessage)                                   \
 	if(inCondition)                                                             \
 	{                                                                           \
-		DebugMsg(inMessage);                                                    \
-		goto inHandler;                                                         \
+		DebugMsg(inMessage);                                                \
+		goto inHandler;                                                     \
 	}
 
 #define FailWithAction(inCondition, inAction, inHandler, inMessage)                 \
 	if(inCondition)                                                             \
 	{                                                                           \
-		DebugMsg(inMessage);                                                    \
-		{ inAction; }                                                           \
-		goto inHandler;                                                         \
+		DebugMsg(inMessage);                                                \
+		{ inAction; }                                                       \
+		goto inHandler;                                                     \
 	}
 
 #else
@@ -97,22 +46,20 @@
 #define FailIf(inCondition, inHandler, inMessage)                                   \
 	if(inCondition)                                                             \
 	{                                                                           \
-		goto inHandler;                                                         \
+		goto inHandler;                                                     \
 	}
 
 #define FailWithAction(inCondition, inAction, inHandler, inMessage)                 \
 	if(inCondition)                                                             \
 	{                                                                           \
-		{ inAction; }                                                           \
-		goto inHandler;                                                         \
+		{ inAction; }                                                       \
+		goto inHandler;                                                     \
 	}
 
 #endif
 
-//==================================================================================================
 #pragma mark -
 #pragma mark CaptainJack State
-//==================================================================================================
 
 //  The purpose of the CaptainJack is to provide the barest of bare bones implementations to
 //  illustrate the minimal set of things a driver has to do. As such, the driver has the following
@@ -198,14 +145,11 @@ static const UInt32             kDataSource_NumberItems         = 4;
 static UInt32                   gDataSource_Input_Master_Value  = 0;
 static UInt32                   gDataSource_Output_Master_Value = 0;
 
-//==================================================================================================
 #pragma mark -
 #pragma mark AudioServerPlugInDriverInterface Implementation
-//==================================================================================================
 
 #pragma mark Prototypes
 
-//  Entry points for the COM methods
 void               *CaptainJack_Create(CFAllocatorRef inAllocator, CFUUIDRef inRequestedTypeUUID);
 static HRESULT      CaptainJack_QueryInterface(void *inDriver, REFIID inUUID, LPVOID *outInterface);
 static ULONG        CaptainJack_AddRef(void *inDriver);
@@ -230,7 +174,6 @@ static OSStatus     CaptainJack_BeginIOOperation(AudioServerPlugInDriverRef inDr
 static OSStatus     CaptainJack_DoIOOperation(AudioServerPlugInDriverRef inDriver, AudioObjectID inDeviceObjectID, AudioObjectID inStreamObjectID, UInt32 inClientID, UInt32 inOperationID, UInt32 inIOBufferFrameSize, const AudioServerPlugInIOCycleInfo *inIOCycleInfo, void *ioMainBuffer, void *ioSecondaryBuffer);
 static OSStatus     CaptainJack_EndIOOperation(AudioServerPlugInDriverRef inDriver, AudioObjectID inDeviceObjectID, UInt32 inClientID, UInt32 inOperationID, UInt32 inIOBufferFrameSize, const AudioServerPlugInIOCycleInfo *inIOCycleInfo);
 
-//  Implementation
 static Boolean      CaptainJack_HasPlugInProperty(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress);
 static OSStatus     CaptainJack_IsPlugInPropertySettable(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, Boolean *outIsSettable);
 static OSStatus     CaptainJack_GetPlugInPropertyDataSize(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, UInt32 inQualifierDataSize, const void *inQualifierData, UInt32 *outDataSize);
