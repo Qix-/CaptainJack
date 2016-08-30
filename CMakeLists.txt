@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.0)
 project (captian-jack)
 
-option (CAPTAINJACK_DEBUG "Whether or not to build captain jack with debug messages" OFF)
+option (CAPTAINJACK_DEBUG "Whether or not to build captain jack with debug messages" ON)
 
 set (SRC
 	captain-jack-device.c
