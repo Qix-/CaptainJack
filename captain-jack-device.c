@@ -109,7 +109,7 @@ enum {
 //  multiple devices were supported, this state would need to be encapsulated in one or more structs
 //  so that each object's state can be tracked individually.
 //  Note also that we share a single mutex across all objects to be thread safe for the same reason.
-#define                         kPlugIn_BundleID                "com.apple.audio.CaptainJack"
+#define                         kPlugIn_BundleID                "me.junon.CaptainJack"
 static pthread_mutex_t          gPlugIn_StateMutex              = PTHREAD_MUTEX_INITIALIZER;
 static UInt32                   gPlugIn_RefCount                = 0;
 static AudioServerPlugInHostRef gPlugIn_Host                    = NULL;
