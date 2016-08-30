@@ -6,6 +6,7 @@
 
 #include <CoreAudio/AudioServerPlugIn.h>
 #include <dispatch/dispatch.h>
+#include <jack/jack.h>
 #include <mach/mach_time.h>
 #include <pthread.h>
 #include <stdint.h>
@@ -341,6 +342,11 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 	//  execution of this method.
 	//  declare the local variables
 	OSStatus theAnswer = 0;
+
+	openlog("CaptainJack", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_DAEMON);
+	setlogmask(0);
+	syslog(LOG_NOTICE, "Captain Jack is sailing the seas!");
+
 	//  check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_Initialize: bad driver reference");
 	//  store the AudioServerPlugInHostRef
@@ -398,6 +404,9 @@ static OSStatus CaptainJack_CreateDevice(AudioServerPlugInDriverRef inDriver, CF
 	OSStatus theAnswer = kAudioHardwareUnsupportedOperationError;
 	//  check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_CreateDevice: bad driver reference");
+
+	// Initialize JACK
+	DebugMsg("CaptainJack_CreateDevice: creating device");
 Done:
 	return theAnswer;
 }
