@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>me.junon.CaptainJack</string>
+	<key>Program</key>
+	<string>/opt/captain-jack/daemon</string>
+	<key>KeepAlive</key>
+	<true />
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>RunAtLoad</key>
+	<true />
+	<key>WorkingDirectory</key>
+	<string>/opt/captain-jack</string>
+	<key>StandardOutPath</key>
+	<string>/var/log/captain-jack.out</string>
+	<key>StandardErrorPath</key>
+	<string>/var/log/captain-jack.err</string>
+	<key>MachServices</key>
+	<dict>
+		<key>me.junon.CaptainJack</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

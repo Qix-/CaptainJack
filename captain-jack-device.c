@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <sys/syslog.h>
+#include <xpc/xpc.h>
 
 #pragma mark -
 #pragma mark Macros
@@ -143,6 +144,8 @@ static bool                     gMute_Output_Master_Value       = false;
 
 static UInt32                   gDataSource_Input_Master_Value  = 0;
 static UInt32                   gDataSource_Output_Master_Value = 0;
+
+static xpc_connection_t         gXPC_Connection                 = NULL;
 
 #pragma mark -
 #pragma mark AudioServerPlugInDriverInterface Implementation
@@ -343,7 +346,7 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 	//  declare the local variables
 	OSStatus theAnswer = 0;
 
-	openlog("CaptainJack", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_DAEMON);
+	openlog("CaptainJack-Driver", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_DAEMON);
 	setlogmask(0);
 	syslog(LOG_NOTICE, "Captain Jack is sailing the seas!");
 
@@ -390,6 +393,19 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 	Float64 theHostClockFrequency = theTimeBaseInfo.denom / theTimeBaseInfo.numer;
 	theHostClockFrequency *= 1000000000.0;
 	gDevice_HostTicksPerFrame = theHostClockFrequency / gDevice_SampleRate;
+
+	// initialize XPC
+	DebugMsg("initializing XPC...");
+	gXPC_Connection = xpc_connection_create_mach_service("me.junon.CaptainJack", NULL, XPC_CONNECTION_MACH_SERVICE_PRIVILEGED);
+	xpc_connection_set_event_handler(gXPC_Connection, ^(xpc_object_t peer) {
+		DebugMsg("connected to launchd service");
+		xpc_connection_set_event_handler(peer, ^(xpc_object_t event) {
+			(void) event;
+			DebugMsg("received a message from the launchd service");
+		});
+		xpc_connection_resume(peer);
+	});
+	xpc_connection_resume(gXPC_Connection);
 Done:
 	return theAnswer;
 }
@@ -405,8 +421,6 @@ static OSStatus CaptainJack_CreateDevice(AudioServerPlugInDriverRef inDriver, CF
 	//  check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_CreateDevice: bad driver reference");
 
-	// Initialize JACK
-	DebugMsg("CaptainJack_CreateDevice: creating device");
 Done:
 	return theAnswer;
 }

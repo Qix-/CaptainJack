@@ -2,12 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
 	<key>CFBundleExecutable</key>
 	<string>CaptainJack</string>
 	<key>CFBundleIdentifier</key>
-	<string>me.junon.CaptainJack</string>
+	<string>me.junon.CaptainJackDriver</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -36,19 +34,9 @@
 			<string>69faa9a9-0164-49eb-bf59-3a86d7ec614d</string>
 		</array>
 	</dict>
-	<key>DTCompiler</key>
-	<string>com.apple.compilers.llvm.clang.1_0</string>
-	<key>DTPlatformBuild</key>
-	<string>7D1014</string>
-	<key>DTPlatformVersion</key>
-	<string>GM</string>
-	<key>DTSDKBuild</key>
-	<string>15E60</string>
-	<key>DTSDKName</key>
-	<string>macosx10.11</string>
-	<key>DTXcode</key>
-	<string>0731</string>
-	<key>DTXcodeBuild</key>
-	<string>7D1014</string>
+	<key>AudioServerPlugIn_MachServices</key>
+	<array>
+		<string>me.junon.CaptainJack</string>
+	</array>
 </dict>
 </plist>
