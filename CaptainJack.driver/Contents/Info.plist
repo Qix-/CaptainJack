@@ -50,5 +50,9 @@
 	<string>0731</string>
 	<key>DTXcodeBuild</key>
 	<string>7D1014</string>
+	<key>AudioServerPlugIn_MachServices</key>
+	<array>
+		<string>me.junon.jackd</string>
+	</array>
 </dict>
 </plist>

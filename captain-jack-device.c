@@ -144,7 +144,7 @@ static bool                     gMute_Output_Master_Value       = false;
 static UInt32                   gDataSource_Input_Master_Value  = 0;
 static UInt32                   gDataSource_Output_Master_Value = 0;
 
-static const char              *gJack_Client_Name               = "Captain Jack";
+static const char              *gJack_Client_Name               = "CaptainJack";
 static jack_client_t           *gJack_Client                    = NULL;
 
 #pragma mark -
@@ -207,6 +207,8 @@ static OSStatus     CaptainJack_GetControlPropertyData(AudioServerPlugInDriverRe
 static OSStatus     CaptainJack_SetControlPropertyData(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress, UInt32 inQualifierDataSize, const void *inQualifierData, UInt32 inDataSize, const void *inData, UInt32 *outNumberPropertiesChanged, AudioObjectPropertyAddress outChangedAddresses[2]);
 
 static _Bool        CaptainJack_ConnectJackd(void);
+
+const char         *jack_get_tmpdir(void);
 
 #pragma mark The Interface
 
@@ -338,6 +340,14 @@ Done:
 
 #pragma mark Basic Operations
 
+static void CaptainJack_JackError(const char *err) {
+	syslog(LOG_ERR, "JACK ERROR: %s", err);
+}
+
+static void CaptainJack_JackInfo(const char *msg) {
+	syslog(LOG_NOTICE, "JACK: %s", msg);
+}
+
 static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, AudioServerPlugInHostRef inHost) {
 	//  The job of this method is, as the name implies, to get the driver initialized. One specific
 	//  thing that needs to be done is to store the AudioServerPlugInHostRef so that it can be used
@@ -350,7 +360,16 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 
 	openlog("CaptainJack", LOG_CONS | LOG_NDELAY | LOG_PID, LOG_DAEMON);
 	setlogmask(0);
-	syslog(LOG_NOTICE, "Captain Jack is sailing the seas!");
+	DebugMsg("Captain Jack is sailing the seas!");
+	jack_set_error_function(&CaptainJack_JackError);
+	jack_set_info_function(&CaptainJack_JackInfo);
+
+	syslog(LOG_NOTICE, "Attempting to elevate to root permissions...");
+	if (setuid(0) == -1) {
+		syslog(LOG_ERR, "Could not set UID to root! May not run propely.");
+	} else {
+		DebugMsg("Successfully elevated privileges");
+	}
 
 	//  check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef, theAnswer = kAudioHardwareBadObjectError, Done, "CaptainJack_Initialize: bad driver reference");
@@ -398,6 +417,7 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 
 	// Start Jack
 	FailWithAction(strlen(gJack_Client_Name) > (unsigned) jack_client_name_size(), theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_Initialize: \"%s\" is longer than JACK's allowed client name length", gJack_Client_Name);
+	FailWithAction(jack_get_tmpdir() == NULL, theAnswer = kAudioHardwareIllegalOperationError, Done, "CaptainJack_Initialize: JACK temporary directory is not specified");
 	FailIf(!CaptainJack_ConnectJackd(), Done, "CaptainJack_Initialize: JACK client open operation failed; check status above");
 Done:
 	return theAnswer;
@@ -3736,8 +3756,9 @@ static _Bool CaptainJack_ConnectJackd(void) {
 
 	DebugMsg("attempting to connect to JACK");
 	jack_status_t status = 0;
-	gJack_Client = jack_client_open(gJack_Client_Name, JackNullOption, &status);
-	DebugMsg("status: JackFailure=%d JackInvalidOption=%d JackNameNotUnique=%d JackServerStarted=%d JackServerFailed=%d JackServerError=%d JackNoSuchClient=%d JackLoadFailure=%d JackInitFailure=%d JackShmFailure=%d JackVersionError=%d JackBackendError=%d JackClientZombie=%d",
+	gJack_Client = jack_client_open(gJack_Client_Name, JackNoStartServer, &status);
+	DebugMsg("status (%d): JackFailure=%d JackInvalidOption=%d JackNameNotUnique=%d JackServerStarted=%d JackServerFailed=%d JackServerError=%d JackNoSuchClient=%d JackLoadFailure=%d JackInitFailure=%d JackShmFailure=%d JackVersionError=%d JackBackendError=%d JackClientZombie=%d",
+			status,
 			!!(status & JackFailure),
 			!!(status & JackInvalidOption),
 			!!(status & JackNameNotUnique),

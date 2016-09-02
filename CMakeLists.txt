@@ -3,6 +3,8 @@ project (captian-jack)
 
 option (CAPTAINJACK_DEBUG "Whether or not to build captain jack with debug messages" ON)
 
+add_compile_options (-g3)
+
 set (SRC
 	captain-jack-device.c
 )
@@ -25,14 +27,13 @@ set (JACK_SRC
 )
 
 # JACK
+execute_process (COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/patch-jack.sh")
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/ext/jack/libjack")
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/ext/jack/")
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/ext/jack/config")
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/ext/jack/include")
-execute_process (COMMAND "./configure"
-	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ext/jack")
 add_definitions (-DHAVE_CONFIG_H -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS)
-add_definitions (-DJACK_LOCATION="/usr/local/bin")
+add_definitions (-DJACK_LOCATION="/usr/local/bin" -DJACK_ASSUME_ROOT)
 add_library (jack-static ${JACK_SRC})
 
 # Captain Jack
