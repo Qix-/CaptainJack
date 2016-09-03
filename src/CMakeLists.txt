@@ -5,8 +5,6 @@ set (COMMON_SRC
 	xmit.c
 )
 
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../ext/jack/include")
-
 add_definitions (-Wall -Wextra -Werror -g3 -std=c99)
 add_definitions (-mmacosx-version-min=10.9)
 
@@ -16,5 +14,4 @@ target_link_libraries (captain-jack "-framework CoreFoundation")
 target_link_libraries (captain-jack "-framework CoreAudio")
 
 add_executable (captain-jack-daemon captain-jack-daemon.c ${COMMON_SRC})
-target_link_libraries (captain-jack-daemon jack)
 target_link_libraries (captain-jack-daemon "-framework CoreFoundation")
