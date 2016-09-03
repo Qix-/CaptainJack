@@ -16,7 +16,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -43,8 +42,6 @@ static const uint16_t       gBindPort            = 50963;
 static CaptainJack_Xmitter *gXmitterClient       = NULL;
 static Proto_MessageId      gTickHeader          = XMPC_NONE;
 
-static pthread_mutex_t      mutSocket;
-
 static void InitializeBindAddr(struct sockaddr_in *addr) {
 	memset(addr, 0, sizeof(*addr));
 	addr->sin_family = PF_INET;
@@ -52,7 +49,7 @@ static void InitializeBindAddr(struct sockaddr_in *addr) {
 	addr->sin_port = htons(gBindPort);
 }
 
-static bool AssertAcceptedCritical(void) {
+static bool AssertAccepted(void) {
 	if (gSocket < 0) {
 		syslog(LOG_NOTICE, "AssertAccepted: noticed the socket was down; will attempt to bring it online");
 
@@ -109,14 +106,7 @@ static bool AssertAcceptedCritical(void) {
 	return true;
 }
 
-static bool AssertAccepted(void) {
-	pthread_mutex_lock(&mutSocket);
-	bool result = AssertAcceptedCritical();
-	pthread_mutex_unlock(&mutSocket);
-	return result;
-}
-
-static bool AssertConnectedCritical(void) {
+static bool AssertConnected(void) {
 	if (gSocket < 0) {
 		// note, we take a different approach here; we're a launch daemon in this call,
 		// so if we can't connect we're going to crash and burn by returning false here.
@@ -151,20 +141,10 @@ static bool AssertConnectedCritical(void) {
 	return true;
 }
 
-static bool AssertConnected(void) {
-	pthread_mutex_lock(&mutSocket);
-	bool result = AssertConnectedCritical();
-	pthread_mutex_unlock(&mutSocket);
-	return result;
-}
-
 static void SendMessage(Proto_MessageId id, void *message, size_t length) {
-	syslog(LOG_NOTICE, "I want to send a message...");
 	if (!AssertAccepted()) {
 		return;
 	}
-
-	syslog(LOG_NOTICE, "about to send a message...");
 
 	ssize_t sent = send(gPeerSocket, &id, sizeof(id), 0);
 	if (sent == -1) {
@@ -178,14 +158,10 @@ static void SendMessage(Proto_MessageId id, void *message, size_t length) {
 		return;
 	}
 
-	// XXX DEBUG
-	syslog(LOG_NOTICE, "about to sent an int: %u", *(unsigned int *)message);
-
 	char *cmessage = message;
 	size_t total = 0;
 	sent = 0;
 	do {
-		syslog(LOG_NOTICE, "sending %u", *(unsigned int *)&cmessage[total]);
 		sent = send(gPeerSocket, &cmessage[total], length - total, 0);
 		total += sent;
 	} while (sent > 0 && total < length);
@@ -254,12 +230,12 @@ size_t GetBytesAvailable(void) {
 
 bool ReadMessage(void *out, size_t length) {
 	ssize_t nread = read(gSocket, out, length);
+
 	if (nread == -1) {
 		syslog(LOG_ERR, "ReadMessage: error reading message: %s", strerror(errno));
 		return false;
 	}
 
-	syslog(LOG_NOTICE, "nread: %zd", nread);
 	return true;
 }
 
@@ -299,11 +275,8 @@ bool CaptainJack_TickXmitter(void) {
 		break;
 	case XMPC_NEW_CLIENT:
 		if (available < sizeof(Proto_NewClient)) {
-			syslog(LOG_NOTICE, "NOT ENOUGH FOR CLIENT: %zu / %zu", available, sizeof(Proto_NewClient));
 			return true;
 		}
-
-		syslog(LOG_NOTICE, "ENOUGH FOR CLIENT: %zu / %zu", available, sizeof(Proto_NewClient));
 
 		Proto_NewClient msg;
 		if (!ReadMessage(&msg, sizeof(msg))) {
