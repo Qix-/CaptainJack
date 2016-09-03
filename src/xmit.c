@@ -28,11 +28,11 @@
 
 typedef enum {
 	XMPC_NONE = 0,
+	XMPC_READY,
 	XMPC_NEW_CLIENT,
 } Proto_MessageId;
 
 typedef struct {
-	Proto_MessageId                          proto_id;
 	pid_t                                    pid;
 } Proto_NewClient;
 
@@ -136,8 +136,17 @@ static int AssertConnected(void) {
 	return true;
 }
 
-static void SendMessage(void *message, size_t length) {
+static void SendMessage(Proto_MessageId id, void *message, size_t length) {
 	if (!AssertAccepted()) {
+		return;
+	}
+
+
+	ssize_t sent = send(gPeerSocket, &id, sizeof(id), 0);
+	if (sent == -1) {
+		syslog(LOG_NOTICE, "SendMessage: could not transmit message header (%d): %s", id, strerror(errno));
+		close(gPeerSocket);
+		gPeerSocket = -1;
 		return;
 	}
 
@@ -145,7 +154,7 @@ static void SendMessage(void *message, size_t length) {
 	while (offset < length) {
 		ssize_t sent = send(gPeerSocket, &message[offset], length - offset, 0);
 		if (sent == -1) {
-			syslog(LOG_NOTICE, "SendMessage: could not transmit message (%d): %s", *(Proto_MessageId*)message, strerror(errno));
+			syslog(LOG_NOTICE, "SendMessage: could not transmit message (%d): %s", id, strerror(errno));
 			close(gPeerSocket);
 			gPeerSocket = -1;
 			return;
@@ -161,17 +170,18 @@ static void SendMessage(void *message, size_t length) {
 	}
 }
 
-static void Send_NewClient(pid_t pid) {
-	Proto_NewClient msg = {
-		XMPC_NEW_CLIENT,
-		pid
-	};
+static void Send_DeviceReady(void) {
+	SendMessage(XMPC_READY, 0, 0);
+}
 
-	SendMessage(&msg, sizeof(msg));
+static void Send_NewClient(pid_t pid) {
+	Proto_NewClient msg = { pid };
+	SendMessage(XMPC_NEW_CLIENT, &msg, sizeof(msg));
 }
 
 static CaptainJack_Xmitter gXmitterServer = {
-	&Send_NewClient
+	&Send_DeviceReady,
+	&Send_NewClient,
 };
 
 CaptainJack_Xmitter * CaptainJack_GetXmitterServer(void) {
@@ -205,7 +215,17 @@ void CaptainJack_RegisterXmitterClient(CaptainJack_Xmitter *xmitter) {
 size_t GetBytesAvailable(void) {
 	size_t available = 0;
 	ioctl(gSocket, FIONREAD, &available);
+	syslog(LOG_NOTICE, "available: %zu", available);
 	return available;
+}
+
+bool ReadMessage(void *out, size_t length) {
+	if (read(gSocket, &out, length) == -1) {
+		syslog(LOG_ERR, "ReadMessage: error reading message: %s", strerror(errno));
+		return false;
+	}
+
+	return true;
 }
 
 bool CaptainJack_TickXmitter(void) {
@@ -233,16 +253,30 @@ bool CaptainJack_TickXmitter(void) {
 		available -= sizeof(gTickHeader);
 	}
 
-	if (available <= 0) { // hopefully it's never negative, but eh...
-		return true;
-	}
-
 	bool result = true;
 	switch (gTickHeader) {
+	case XMPC_NONE:
+		// strange...
+		syslog(LOG_NOTICE, "CaptainJack_TickXmitter: came across XMPC_NONE... not sure why...");
+		break;
+	case XMPC_READY:
+		gXmitterClient->do_device_ready();
+		break;
+	case XMPC_NEW_CLIENT:
+		if (available < sizeof(Proto_NewClient)) {
+			return true;
+		}
+
+		Proto_NewClient msg;
+		ReadMessage(&msg, sizeof(msg));
+		gXmitterClient->do_client_connect(msg.pid);
+		break;
 	default:
 		syslog(LOG_NOTICE, "CaptainJack_TickXmitter: encountered unknown xmit message header: %d", gTickHeader);
 		result = false;
 	}
+
+	gTickHeader = XMPC_NONE;
 
 	return result;
 }

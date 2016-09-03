@@ -304,6 +304,8 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 
 	gDevice_HostTicksPerFrame = theHostClockFrequency / gDevice_SampleRate;
 
+	gXmitter->do_device_ready();
+
 	return 0;
 }
 
@@ -342,7 +344,8 @@ static OSStatus CaptainJack_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
 		return kAudioHardwareBadObjectError;
 	}
 
-	gXmitter->do_client_connect(inClientInfo->mProcessID);
+	DebugMsg("new client connected: %u", inClientInfo->mProcessID);
+	// gXmitter->do_client_connect(inClientInfo->mProcessID);
 
 	return 0;
 }

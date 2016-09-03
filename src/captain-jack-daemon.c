@@ -18,12 +18,17 @@
 
 #include "xmit.h"
 
+static void on_ready(void) {
+	syslog(LOG_NOTICE, "device has signaled it's ready");
+}
+
 static void on_new_client(pid_t pid) {
 	syslog(LOG_NOTICE, "hey look at that, a client: %d", pid);
 }
 
 static CaptainJack_Xmitter xmitterClient = {
-	&on_new_client
+	&on_ready,
+	&on_new_client,
 };
 
 int main(void) {
