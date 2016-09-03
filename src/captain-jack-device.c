@@ -344,7 +344,6 @@ static OSStatus CaptainJack_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
 		return kAudioHardwareBadObjectError;
 	}
 
-	DebugMsg("new client connected: %u", inClientInfo->mProcessID);
 	gXmitter->do_client_connect(inClientInfo->mProcessID);
 
 	return 0;

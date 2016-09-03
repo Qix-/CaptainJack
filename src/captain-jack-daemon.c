@@ -12,6 +12,7 @@
 	        released under the MIT license
 */
 
+#include <libproc.h>
 #include <stdbool.h>
 #include <sys/syslog.h>
 #include <unistd.h>
@@ -23,7 +24,12 @@ static void on_ready(void) {
 }
 
 static void on_new_client(pid_t pid) {
-	syslog(LOG_NOTICE, "hey look at that, a client: %u", pid);
+	char buffer[1024];
+	if (proc_name(pid, &buffer[0], sizeof(buffer)) == -1) {
+		syslog(LOG_NOTICE, "could not get name of client with pid %u", pid);
+	} else {
+		syslog(LOG_NOTICE, "client connected: %s (%u)", &buffer[0], pid);
+	}
 }
 
 static CaptainJack_Xmitter xmitterClient = {
