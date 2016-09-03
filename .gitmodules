@@ -1,0 +1,3 @@
+[submodule "ext/jack"]
+	path = ext/jack
+	url = https://github.com/jackaudio/jack1.git
