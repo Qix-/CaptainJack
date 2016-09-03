@@ -13,7 +13,7 @@
 */
 
 #include <CoreAudio/AudioServerPlugIn.h>
-#include <cstdint>
+#include <stdint.h>
 #include <dispatch/dispatch.h>
 #include <jack/jack.h>
 #include <mach/mach_time.h>
@@ -55,10 +55,10 @@ enum {
 #define                         kPlugIn_BundleID                "me.junon.CaptainJack"
 static pthread_mutex_t          gPlugIn_StateMutex              = PTHREAD_MUTEX_INITIALIZER;
 static UInt32                   gPlugIn_RefCount                = 0;
-static AudioServerPlugInHostRef gPlugIn_Host                    = nullptr;
+static AudioServerPlugInHostRef gPlugIn_Host                    = NULL;
 
 #define                         kBox_UID                        "CaptainJackBox_UID"
-static CFStringRef              gBox_Name                       = nullptr;
+static CFStringRef              gBox_Name                       = NULL;
 static Boolean                  gBox_Acquired                   = true;
 
 #define                         kDevice_UID                     "CaptainJackDevice_UID"
@@ -144,7 +144,7 @@ static OSStatus     CaptainJack_SetControlPropertyData(AudioServerPlugInDriverRe
 
 
 static AudioServerPlugInDriverInterface gAudioServerPlugInDriverInterface = {
-	nullptr,
+	NULL,
 	CaptainJack_QueryInterface,
 	CaptainJack_AddRef,
 	CaptainJack_Release,
@@ -180,7 +180,7 @@ void *CaptainJack_Create(CFAllocatorRef inAllocator, CFUUIDRef inRequestedTypeUU
 		return gAudioServerPlugInDriverRef;
 	}
 
-	return nullptr;
+	return NULL;
 }
 
 
@@ -190,15 +190,15 @@ static HRESULT CaptainJack_QueryInterface(void *inDriver, REFIID inUUID, LPVOID 
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (outInterface == nullptr) {
+	if (outInterface == NULL) {
 		DebugMsg("CaptainJack_QueryInterface: no place to store the returned interface");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	CFUUIDRef theRequestedUUID = nullptr;
-	theRequestedUUID = CFUUIDCreateFromUUIDBytes(nullptr, inUUID);
+	CFUUIDRef theRequestedUUID = NULL;
+	theRequestedUUID = CFUUIDCreateFromUUIDBytes(NULL, inUUID);
 
-	if (theRequestedUUID == nullptr) {
+	if (theRequestedUUID == NULL) {
 		DebugMsg("CaptainJack_QueryInterface: failed to create the CFUUIDRef");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -260,10 +260,10 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 	}
 
 	gPlugIn_Host = inHost;
-	CFPropertyListRef theSettingsData = nullptr;
+	CFPropertyListRef theSettingsData = NULL;
 	gPlugIn_Host->CopyFromStorage(gPlugIn_Host, CFSTR("box acquired"), &theSettingsData);
 
-	if (theSettingsData != nullptr) {
+	if (theSettingsData != NULL) {
 		if (CFGetTypeID(theSettingsData) == CFBooleanGetTypeID()) {
 			gBox_Acquired = CFBooleanGetValue((CFBooleanRef)theSettingsData);
 		} else if (CFGetTypeID(theSettingsData) == CFNumberGetTypeID()) {
@@ -277,7 +277,7 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 
 	gPlugIn_Host->CopyFromStorage(gPlugIn_Host, CFSTR("box acquired"), &theSettingsData);
 
-	if (theSettingsData != nullptr) {
+	if (theSettingsData != NULL) {
 		if (CFGetTypeID(theSettingsData) == CFStringGetTypeID()) {
 			gBox_Name = (CFStringRef)theSettingsData;
 			CFRetain(gBox_Name);
@@ -286,7 +286,7 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 		CFRelease(theSettingsData);
 	}
 
-	if (gBox_Name == nullptr) {
+	if (gBox_Name == NULL) {
 		gBox_Name = CFSTR("Null Box");
 	}
 
@@ -420,7 +420,7 @@ static Boolean CaptainJack_HasProperty(AudioServerPlugInDriverRef inDriver, Audi
 		return false;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_HasProperty: no address");
 		return false;
 	}
@@ -457,12 +457,12 @@ static OSStatus CaptainJack_IsPropertySettable(AudioServerPlugInDriverRef inDriv
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_IsPropertySettable: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outIsSettable == nullptr) {
+	if (outIsSettable == NULL) {
 		DebugMsg("CaptainJack_IsPropertySettable: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -499,12 +499,12 @@ static OSStatus CaptainJack_GetPropertyDataSize(AudioServerPlugInDriverRef inDri
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetPropertyDataSize: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetPropertyDataSize: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -542,17 +542,17 @@ static OSStatus CaptainJack_GetPropertyData(AudioServerPlugInDriverRef inDriver,
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetPropertyData: no place to put the return value size");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outData == nullptr) {
+	if (outData == NULL) {
 		DebugMsg("CaptainJack_GetPropertyData: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -589,7 +589,7 @@ static OSStatus CaptainJack_SetPropertyData(AudioServerPlugInDriverRef inDriver,
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_SetPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -640,7 +640,7 @@ static Boolean  CaptainJack_HasPlugInProperty(AudioServerPlugInDriverRef inDrive
 		return false;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_HasPlugInProperty: no address");
 		return false;
 	}
@@ -677,12 +677,12 @@ static OSStatus CaptainJack_IsPlugInPropertySettable(AudioServerPlugInDriverRef 
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_IsPlugInPropertySettable: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outIsSettable == nullptr) {
+	if (outIsSettable == NULL) {
 		DebugMsg("CaptainJack_IsPlugInPropertySettable: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -720,12 +720,12 @@ static OSStatus CaptainJack_GetPlugInPropertyDataSize(AudioServerPlugInDriverRef
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetPlugInPropertyDataSize: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetPlugInPropertyDataSize: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -808,17 +808,17 @@ static OSStatus CaptainJack_GetPlugInPropertyData(AudioServerPlugInDriverRef inD
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetPlugInPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetPlugInPropertyData: no place to put the return value size");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outData == nullptr) {
+	if (outData == NULL) {
 		DebugMsg("CaptainJack_GetPlugInPropertyData: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -942,7 +942,7 @@ static OSStatus CaptainJack_GetPlugInPropertyData(AudioServerPlugInDriverRef inD
 			return kAudioHardwareBadPropertySizeError;
 		}
 
-		if (inQualifierData == nullptr) {
+		if (inQualifierData == NULL) {
 			DebugMsg("CaptainJack_GetPlugInPropertyData: no qualifier for kAudioPlugInPropertyTranslateUIDToBox");
 			return kAudioHardwareBadPropertySizeError;
 		}
@@ -994,7 +994,7 @@ static OSStatus CaptainJack_GetPlugInPropertyData(AudioServerPlugInDriverRef inD
 			return kAudioHardwareBadPropertySizeError;
 		}
 
-		if (inQualifierData == nullptr) {
+		if (inQualifierData == NULL) {
 			DebugMsg("CaptainJack_GetPlugInPropertyData: no qualifier for kAudioPlugInPropertyTranslateUIDToDevice");
 			return kAudioHardwareBadPropertySizeError;
 		}
@@ -1040,17 +1040,17 @@ static OSStatus CaptainJack_SetPlugInPropertyData(AudioServerPlugInDriverRef inD
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_SetPlugInPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outNumberPropertiesChanged == nullptr) {
+	if (outNumberPropertiesChanged == NULL) {
 		DebugMsg("CaptainJack_SetPlugInPropertyData: no place to return the number of properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outChangedAddresses == nullptr) {
+	if (outChangedAddresses == NULL) {
 		DebugMsg("CaptainJack_SetPlugInPropertyData: no place to return the properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -1087,7 +1087,7 @@ static Boolean  CaptainJack_HasBoxProperty(AudioServerPlugInDriverRef inDriver, 
 		return theAnswer;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_HasBoxProperty: no address");
 		return theAnswer;
 	}
@@ -1139,12 +1139,12 @@ static OSStatus CaptainJack_IsBoxPropertySettable(AudioServerPlugInDriverRef inD
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_IsBoxPropertySettable: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outIsSettable == nullptr) {
+	if (outIsSettable == NULL) {
 		DebugMsg("CaptainJack_IsBoxPropertySettable: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -1202,12 +1202,12 @@ static OSStatus CaptainJack_GetBoxPropertyDataSize(AudioServerPlugInDriverRef in
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetBoxPropertyDataSize: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetBoxPropertyDataSize: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -1318,17 +1318,17 @@ static OSStatus CaptainJack_GetBoxPropertyData(AudioServerPlugInDriverRef inDriv
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetBoxPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetBoxPropertyData: no place to put the return value size");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outData == nullptr) {
+	if (outData == NULL) {
 		DebugMsg("CaptainJack_GetBoxPropertyData: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -1392,7 +1392,7 @@ static OSStatus CaptainJack_GetBoxPropertyData(AudioServerPlugInDriverRef inDriv
 		*((CFStringRef *)outData) = gBox_Name;
 		pthread_mutex_unlock(&gPlugIn_StateMutex);
 
-		if (*((CFStringRef *)outData) != nullptr) {
+		if (*((CFStringRef *)outData) != NULL) {
 			CFRetain(*((CFStringRef *)outData));
 		}
 
@@ -1600,17 +1600,17 @@ static OSStatus CaptainJack_SetBoxPropertyData(AudioServerPlugInDriverRef inDriv
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_SetBoxPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outNumberPropertiesChanged == nullptr) {
+	if (outNumberPropertiesChanged == NULL) {
 		DebugMsg("CaptainJack_SetBoxPropertyData: no place to return the number of properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outChangedAddresses == nullptr) {
+	if (outChangedAddresses == NULL) {
 		DebugMsg("CaptainJack_SetBoxPropertyData: no place to return the properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -1638,11 +1638,11 @@ static OSStatus CaptainJack_SetBoxPropertyData(AudioServerPlugInDriverRef inDriv
 		CFStringRef *theNewName = (CFStringRef *)inData;
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 
-		if ((theNewName != nullptr) && (*theNewName != nullptr)) {
+		if ((theNewName != NULL) && (*theNewName != NULL)) {
 			CFRetain(*theNewName);
 		}
 
-		if (gBox_Name != nullptr) {
+		if (gBox_Name != NULL) {
 			CFRelease(gBox_Name);
 		}
 
@@ -1728,7 +1728,7 @@ static Boolean  CaptainJack_HasDeviceProperty(AudioServerPlugInDriverRef inDrive
 		return theAnswer;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_HasDeviceProperty: no address");
 		return theAnswer;
 	}
@@ -1789,12 +1789,12 @@ static OSStatus CaptainJack_IsDevicePropertySettable(AudioServerPlugInDriverRef 
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_IsDevicePropertySettable: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outIsSettable == nullptr) {
+	if (outIsSettable == NULL) {
 		DebugMsg("CaptainJack_IsDevicePropertySettable: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -1859,12 +1859,12 @@ static OSStatus CaptainJack_GetDevicePropertyDataSize(AudioServerPlugInDriverRef
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetDevicePropertyDataSize: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetDevicePropertyDataSize: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -2028,17 +2028,17 @@ static OSStatus CaptainJack_GetDevicePropertyData(AudioServerPlugInDriverRef inD
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetDevicePropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetDevicePropertyData: no place to put the return value size");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outData == nullptr) {
+	if (outData == NULL) {
 		DebugMsg("CaptainJack_GetDevicePropertyData: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -2545,14 +2545,14 @@ static OSStatus CaptainJack_GetDevicePropertyData(AudioServerPlugInDriverRef inD
 
 		CFBundleRef theBundle = CFBundleGetBundleWithIdentifier(CFSTR(kPlugIn_BundleID));
 
-		if (theBundle == nullptr) {
+		if (theBundle == NULL) {
 			DebugMsg("CaptainJack_GetDevicePropertyData: could not get the plug-in bundle for kAudioDevicePropertyIcon");
 			return kAudioHardwareUnspecifiedError;
 		}
 
-		CFURLRef theURL = CFBundleCopyResourceURL(theBundle, CFSTR("DeviceIcon.icns"), nullptr, nullptr);
+		CFURLRef theURL = CFBundleCopyResourceURL(theBundle, CFSTR("DeviceIcon.icns"), NULL, NULL);
 
-		if (theURL == nullptr) {
+		if (theURL == NULL) {
 			DebugMsg("CaptainJack_GetDevicePropertyData: could not get the URL for kAudioDevicePropertyIcon");
 			return kAudioHardwareUnspecifiedError;
 		}
@@ -2582,17 +2582,17 @@ static OSStatus CaptainJack_SetDevicePropertyData(AudioServerPlugInDriverRef inD
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_SetDevicePropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outNumberPropertiesChanged == nullptr) {
+	if (outNumberPropertiesChanged == NULL) {
 		DebugMsg("CaptainJack_SetDevicePropertyData: no place to return the number of properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outChangedAddresses == nullptr) {
+	if (outChangedAddresses == NULL) {
 		DebugMsg("CaptainJack_SetDevicePropertyData: no place to return the properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -2633,7 +2633,7 @@ static OSStatus CaptainJack_SetDevicePropertyData(AudioServerPlugInDriverRef inD
 			//  we dispatch this so that the change can happen asynchronously
 			theOldSampleRate = *((const Float64 *)inData);
 			theNewSampleRate = (UInt64)theOldSampleRate;
-			dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^ { gPlugIn_Host->RequestDeviceConfigurationChange(gPlugIn_Host, kObjectID_Device, theNewSampleRate, nullptr); });
+			dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^ { gPlugIn_Host->RequestDeviceConfigurationChange(gPlugIn_Host, kObjectID_Device, theNewSampleRate, NULL); });
 		}
 
 		break;
@@ -2658,7 +2658,7 @@ static Boolean  CaptainJack_HasStreamProperty(AudioServerPlugInDriverRef inDrive
 		return theAnswer;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_HasStreamProperty: no address");
 		return theAnswer;
 	}
@@ -2704,12 +2704,12 @@ static OSStatus CaptainJack_IsStreamPropertySettable(AudioServerPlugInDriverRef 
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_IsStreamPropertySettable: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outIsSettable == nullptr) {
+	if (outIsSettable == NULL) {
 		DebugMsg("CaptainJack_IsStreamPropertySettable: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -2761,12 +2761,12 @@ static OSStatus CaptainJack_GetStreamPropertyDataSize(AudioServerPlugInDriverRef
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetStreamPropertyDataSize: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetStreamPropertyDataSize: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -2845,17 +2845,17 @@ static OSStatus CaptainJack_GetStreamPropertyData(AudioServerPlugInDriverRef inD
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetStreamPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetStreamPropertyData: no place to put the return value size");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outData == nullptr) {
+	if (outData == NULL) {
 		DebugMsg("CaptainJack_GetStreamPropertyData: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -3072,17 +3072,17 @@ static OSStatus CaptainJack_SetStreamPropertyData(AudioServerPlugInDriverRef inD
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_SetStreamPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outNumberPropertiesChanged == nullptr) {
+	if (outNumberPropertiesChanged == NULL) {
 		DebugMsg("CaptainJack_SetStreamPropertyData: no place to return the number of properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outChangedAddresses == nullptr) {
+	if (outChangedAddresses == NULL) {
 		DebugMsg("CaptainJack_SetStreamPropertyData: no place to return the properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -3192,7 +3192,7 @@ static OSStatus CaptainJack_SetStreamPropertyData(AudioServerPlugInDriverRef inD
 			//  we dispatch this so that the change can happen asynchronously
 			theOldSampleRate = ((const AudioStreamBasicDescription *)inData)->mSampleRate;
 			theNewSampleRate = (UInt64)theOldSampleRate;
-			dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^ { gPlugIn_Host->RequestDeviceConfigurationChange(gPlugIn_Host, kObjectID_Device, theNewSampleRate, nullptr); });
+			dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^ { gPlugIn_Host->RequestDeviceConfigurationChange(gPlugIn_Host, kObjectID_Device, theNewSampleRate, NULL); });
 		}
 
 		break;
@@ -3217,7 +3217,7 @@ static Boolean  CaptainJack_HasControlProperty(AudioServerPlugInDriverRef inDriv
 		return theAnswer;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_HasControlProperty: no address");
 		return theAnswer;
 	}
@@ -3294,12 +3294,12 @@ static OSStatus CaptainJack_IsControlPropertySettable(AudioServerPlugInDriverRef
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_IsControlPropertySettable: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outIsSettable == nullptr) {
+	if (outIsSettable == NULL) {
 		DebugMsg("CaptainJack_IsControlPropertySettable: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -3399,12 +3399,12 @@ static OSStatus CaptainJack_GetControlPropertyDataSize(AudioServerPlugInDriverRe
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetControlPropertyDataSize: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetControlPropertyDataSize: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -3568,17 +3568,17 @@ static OSStatus CaptainJack_GetControlPropertyData(AudioServerPlugInDriverRef in
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_GetControlPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outDataSize == nullptr) {
+	if (outDataSize == NULL) {
 		DebugMsg("CaptainJack_GetControlPropertyData: no place to put the return value size");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outData == nullptr) {
+	if (outData == NULL) {
 		DebugMsg("CaptainJack_GetControlPropertyData: no place to put the return value");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -3985,17 +3985,17 @@ static OSStatus CaptainJack_SetControlPropertyData(AudioServerPlugInDriverRef in
 		return kAudioHardwareBadObjectError;
 	}
 
-	if (inAddress == nullptr) {
+	if (inAddress == NULL) {
 		DebugMsg("CaptainJack_SetControlPropertyData: no address");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outNumberPropertiesChanged == nullptr) {
+	if (outNumberPropertiesChanged == NULL) {
 		DebugMsg("CaptainJack_SetControlPropertyData: no place to return the number of properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
 
-	if (outChangedAddresses == nullptr) {
+	if (outChangedAddresses == NULL) {
 		DebugMsg("CaptainJack_SetControlPropertyData: no place to return the properties that changed");
 		return kAudioHardwareIllegalOperationError;
 	}
@@ -4373,11 +4373,11 @@ static OSStatus CaptainJack_WillDoIOOperation(AudioServerPlugInDriverRef inDrive
 	};
 
 	//  fill out the return values
-	if (outWillDo != nullptr) {
+	if (outWillDo != NULL) {
 		*outWillDo = willDo;
 	}
 
-	if (outWillDoInPlace != nullptr) {
+	if (outWillDoInPlace != NULL) {
 		*outWillDoInPlace = willDoInPlace;
 	}
 
