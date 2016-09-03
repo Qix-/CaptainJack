@@ -312,6 +312,19 @@ bool CaptainJack_TickXmitter(void) {
 		gXmitterClient->do_client_connect(msg.cid, msg.pid);
 		break;
 	}
+	case XMPC_CLIENT_DISCONNECT: {
+		if (available < sizeof(Proto_PIDCIDMessage)) {
+			return true;
+		}
+
+		Proto_PIDCIDMessage msg;
+		if (!ReadMessage(&msg, sizeof(msg))) {
+			return false;
+		}
+
+		gXmitterClient->do_client_disconnect(msg.cid, msg.pid);
+		break;
+	}
 	case XMPC_CLIENT_ENABLE_IO: {
 		if (available < sizeof(Proto_CIDMessage)) {
 			return true;
@@ -323,6 +336,7 @@ bool CaptainJack_TickXmitter(void) {
 		}
 
 		gXmitterClient->do_client_enable_io(msg.cid);
+		break;
 	}
 	case XMPC_CLIENT_DISABLE_IO: {
 		if (available < sizeof(Proto_CIDMessage)) {
@@ -335,6 +349,7 @@ bool CaptainJack_TickXmitter(void) {
 		}
 
 		gXmitterClient->do_client_disable_io(msg.cid);
+		break;
 	}
 	default:
 		syslog(LOG_NOTICE, "CaptainJack_TickXmitter: encountered unknown xmit message header: %d", gTickHeader);
