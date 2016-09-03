@@ -34,6 +34,7 @@ typedef enum {
 } Proto_MessageId;
 
 typedef struct {
+	unsigned int                             cid;
 	pid_t                                    pid;
 } Proto_PIDMessage;
 
@@ -185,13 +186,13 @@ static void Send_DeviceReady(void) {
 	SendMessage(XMPC_READY, 0, 0);
 }
 
-static void Send_NewClient(pid_t pid) {
-	Proto_PIDMessage msg = { pid };
+static void Send_NewClient(unsigned int cid, pid_t pid) {
+	Proto_PIDMessage msg = { cid, pid };
 	SendMessage(XMPC_NEW_CLIENT, &msg, sizeof(msg));
 }
 
-static void Send_DCClient(pid_t pid) {
-	Proto_PIDMessage msg = { pid };
+static void Send_DCClient(unsigned int cid, pid_t pid) {
+	Proto_PIDMessage msg = { cid, pid };
 	SendMessage(XMPC_CLIENT_DISCONNECT, &msg, sizeof(msg));
 }
 
@@ -290,7 +291,7 @@ bool CaptainJack_TickXmitter(void) {
 			return false;
 		}
 
-		gXmitterClient->do_client_connect(msg.pid);
+		gXmitterClient->do_client_connect(msg.cid, msg.pid);
 		break;
 	default:
 		syslog(LOG_NOTICE, "CaptainJack_TickXmitter: encountered unknown xmit message header: %d", gTickHeader);

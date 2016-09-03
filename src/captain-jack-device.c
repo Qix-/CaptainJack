@@ -344,7 +344,7 @@ static OSStatus CaptainJack_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
 		return kAudioHardwareBadObjectError;
 	}
 
-	gXmitter->do_client_connect(inClientInfo->mProcessID);
+	gXmitter->do_client_connect(inClientInfo->mClientID, inClientInfo->mProcessID);
 
 	return 0;
 }
@@ -362,7 +362,7 @@ static OSStatus CaptainJack_RemoveDeviceClient(AudioServerPlugInDriverRef inDriv
 		return kAudioHardwareBadObjectError;
 	}
 
-	gXmitter->do_client_disconnect(inClientInfo->mProcessID);
+	gXmitter->do_client_disconnect(inClientInfo->mClientID, inClientInfo->mProcessID);
 
 	return 0;
 }

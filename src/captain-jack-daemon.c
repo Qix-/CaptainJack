@@ -23,17 +23,17 @@ static void on_ready(void) {
 	syslog(LOG_NOTICE, "device has signaled it's ready");
 }
 
-static void on_new_client(pid_t pid) {
+static void on_new_client(unsigned int cid, pid_t pid) {
 	char buffer[1024];
 	if (proc_name(pid, &buffer[0], sizeof(buffer)) == -1) {
-		syslog(LOG_NOTICE, "could not get name of client with pid %u", pid);
+		syslog(LOG_NOTICE, "could not get name of client with pid %u (%u)", pid, cid);
 	} else {
-		syslog(LOG_NOTICE, "client connected: %s (%u)", &buffer[0], pid);
+		syslog(LOG_NOTICE, "client connected: %s <%u> (%u)", &buffer[0], pid, cid);
 	}
 }
 
-static void on_client_disconnect(pid_t pid) {
-	syslog(LOG_NOTICE, "client disconnected: %u", pid);
+static void on_client_disconnect(unsigned int cid, pid_t pid) {
+	syslog(LOG_NOTICE, "client disconnected: %u (id %d)", pid, cid);
 }
 
 static CaptainJack_Xmitter xmitterClient = {
