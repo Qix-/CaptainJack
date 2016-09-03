@@ -345,7 +345,7 @@ static OSStatus CaptainJack_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
 	}
 
 	DebugMsg("new client connected: %u", inClientInfo->mProcessID);
-	// gXmitter->do_client_connect(inClientInfo->mProcessID);
+	gXmitter->do_client_connect(inClientInfo->mProcessID);
 
 	return 0;
 }

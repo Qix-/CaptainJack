@@ -6,7 +6,7 @@ cd "$(dirname "${0}")"
 DRIVER_NAME=CaptainJack.driver
 
 function kill_audio {
-	sudo launchctl kill SIGTERM system/com.apple.audio.coreaudiod || sudo killall coreaudiod
+	ps aux | grep _coreaudiod | grep -v grep | awk '{print $2}' | xargs sudo kill -9
 	return $?
 }
 
@@ -42,5 +42,8 @@ sudo cp ./me.junon.CaptainJack.plist /Library/LaunchDaemons/me.junon.CaptainJack
 sudo chown -R root:wheel /Library/LaunchDaemons/me.junon.CaptainJack.plist
 sudo chmod 0600 /Library/LaunchDaemons/me.junon.CaptainJack.plist
 sudo launchctl bootstrap system /Library/LaunchDaemons/me.junon.CaptainJack.plist
+
+echo "restarting core audio"
+kill_audio &>dev || : # we do this both before and after because coreaudiod doesn't like to de-register devices :)
 
 echo "installed successfully"

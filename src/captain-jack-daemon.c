@@ -23,7 +23,7 @@ static void on_ready(void) {
 }
 
 static void on_new_client(pid_t pid) {
-	syslog(LOG_NOTICE, "hey look at that, a client: %d", pid);
+	syslog(LOG_NOTICE, "hey look at that, a client: %u", pid);
 }
 
 static CaptainJack_Xmitter xmitterClient = {

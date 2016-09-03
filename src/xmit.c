@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -38,9 +39,11 @@ typedef struct {
 
 static int                  gSocket              = -1;
 static int                  gPeerSocket          = -1;
-static const uint16_t       gBindPort            = 24638;
+static const uint16_t       gBindPort            = 50963;
 static CaptainJack_Xmitter *gXmitterClient       = NULL;
 static Proto_MessageId      gTickHeader          = XMPC_NONE;
+
+static pthread_mutex_t      mutSocket;
 
 static void InitializeBindAddr(struct sockaddr_in *addr) {
 	memset(addr, 0, sizeof(*addr));
@@ -49,7 +52,7 @@ static void InitializeBindAddr(struct sockaddr_in *addr) {
 	addr->sin_port = htons(gBindPort);
 }
 
-static bool AssertAccepted(void) {
+static bool AssertAcceptedCritical(void) {
 	if (gSocket < 0) {
 		syslog(LOG_NOTICE, "AssertAccepted: noticed the socket was down; will attempt to bring it online");
 
@@ -64,12 +67,14 @@ static bool AssertAccepted(void) {
 		InitializeBindAddr(&addr);
 		if (bind(gSocket, (const struct sockaddr *) &addr, sizeof(addr)) != 0) {
 			syslog(LOG_ERR, "AssertAccepted: could not bind to 0.0.0.0:%d: %s", gBindPort, strerror(errno));
+			close(gSocket);
 			gSocket = -1;
 			return false;
 		}
 
 		if (listen(gSocket, 2) != 0) {
 			syslog(LOG_ERR, "AssertAccepted: could not listen on 0.0.0.0:%d: %s", gBindPort, strerror(errno));
+			close(gSocket);
 			gSocket = -1;
 			return false;
 		}
@@ -91,7 +96,10 @@ static bool AssertAccepted(void) {
 				syslog(LOG_ERR, "AssertAccepted: error when accepting: %s", strerror(errno));
 			}
 
+			close(gSocket);
+
 			gPeerSocket = -1;
+			gSocket = -1;
 			return false;
 		}
 
@@ -101,7 +109,14 @@ static bool AssertAccepted(void) {
 	return true;
 }
 
-static int AssertConnected(void) {
+static bool AssertAccepted(void) {
+	pthread_mutex_lock(&mutSocket);
+	bool result = AssertAcceptedCritical();
+	pthread_mutex_unlock(&mutSocket);
+	return result;
+}
+
+static bool AssertConnectedCritical(void) {
 	if (gSocket < 0) {
 		// note, we take a different approach here; we're a launch daemon in this call,
 		// so if we can't connect we're going to crash and burn by returning false here.
@@ -124,8 +139,8 @@ static int AssertConnected(void) {
 			return false;
 		}
 
-		bool value = true;
-		setsockopt(gSocket, SOL_SOCKET, SO_KEEPALIVE, &value, sizeof(value));
+		// bool value = true;
+		// setsockopt(gSocket, SOL_SOCKET, SO_KEEPALIVE, &value, sizeof(value));
 		fcntl(gSocket, F_SETFL, O_NONBLOCK);
 
 		gTickHeader = true;
@@ -136,37 +151,56 @@ static int AssertConnected(void) {
 	return true;
 }
 
+static bool AssertConnected(void) {
+	pthread_mutex_lock(&mutSocket);
+	bool result = AssertConnectedCritical();
+	pthread_mutex_unlock(&mutSocket);
+	return result;
+}
+
 static void SendMessage(Proto_MessageId id, void *message, size_t length) {
+	syslog(LOG_NOTICE, "I want to send a message...");
 	if (!AssertAccepted()) {
 		return;
 	}
 
+	syslog(LOG_NOTICE, "about to send a message...");
 
 	ssize_t sent = send(gPeerSocket, &id, sizeof(id), 0);
 	if (sent == -1) {
-		syslog(LOG_NOTICE, "SendMessage: could not transmit message header (%d): %s", id, strerror(errno));
+		syslog(LOG_ERR, "SendMessage: could not transmit message header (%d): %s", id, strerror(errno));
 		close(gPeerSocket);
 		gPeerSocket = -1;
 		return;
 	}
 
-	size_t offset = 0;
-	while (offset < length) {
-		ssize_t sent = send(gPeerSocket, &message[offset], length - offset, 0);
-		if (sent == -1) {
-			syslog(LOG_NOTICE, "SendMessage: could not transmit message (%d): %s", id, strerror(errno));
-			close(gPeerSocket);
-			gPeerSocket = -1;
-			return;
-		}
+	if (length <= 0) {
+		return;
+	}
 
-		if (sent == 0) {
-			// XXX DEBUG
-			syslog(LOG_NOTICE, "SendMessage: sent message %d of %zu size", *(Proto_MessageId*)message, length);
-			return;
-		}
+	// XXX DEBUG
+	syslog(LOG_NOTICE, "about to sent an int: %u", *(unsigned int *)message);
 
-		offset += sent;
+	char *cmessage = message;
+	size_t total = 0;
+	sent = 0;
+	do {
+		syslog(LOG_NOTICE, "sending %u", *(unsigned int *)&cmessage[total]);
+		sent = send(gPeerSocket, &cmessage[total], length - total, 0);
+		total += sent;
+	} while (sent > 0 && total < length);
+
+	if (sent == -1) {
+		syslog(LOG_NOTICE, "SendMessage: could not transmit message (%d): %s", id, strerror(errno));
+		close(gPeerSocket);
+		gPeerSocket = -1;
+		return;
+	}
+
+	if (sent == 0) {
+		// XXX DEBUG
+		syslog(LOG_NOTICE, "SendMessage: sent message %d of %zu size", *(Proto_MessageId*)message, length);
+		return;
 	}
 }
 
@@ -215,16 +249,17 @@ void CaptainJack_RegisterXmitterClient(CaptainJack_Xmitter *xmitter) {
 size_t GetBytesAvailable(void) {
 	size_t available = 0;
 	ioctl(gSocket, FIONREAD, &available);
-	syslog(LOG_NOTICE, "available: %zu", available);
 	return available;
 }
 
 bool ReadMessage(void *out, size_t length) {
-	if (read(gSocket, &out, length) == -1) {
+	ssize_t nread = read(gSocket, &out, length);
+	if (nread == -1) {
 		syslog(LOG_ERR, "ReadMessage: error reading message: %s", strerror(errno));
 		return false;
 	}
 
+	syslog(LOG_NOTICE, "nread: %zd", nread);
 	return true;
 }
 
@@ -264,11 +299,17 @@ bool CaptainJack_TickXmitter(void) {
 		break;
 	case XMPC_NEW_CLIENT:
 		if (available < sizeof(Proto_NewClient)) {
+			syslog(LOG_NOTICE, "NOT ENOUGH FOR CLIENT: %zu / %zu", available, sizeof(Proto_NewClient));
 			return true;
 		}
 
+		syslog(LOG_NOTICE, "ENOUGH FOR CLIENT: %zu / %zu", available, sizeof(Proto_NewClient));
+
 		Proto_NewClient msg;
-		ReadMessage(&msg, sizeof(msg));
+		if (!ReadMessage(&msg, sizeof(msg))) {
+			return false;
+		}
+
 		gXmitterClient->do_client_connect(msg.pid);
 		break;
 	default:
