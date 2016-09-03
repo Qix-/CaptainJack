@@ -1,3 +1,17 @@
+/*
+	,---.         .              ,-_/
+	|  -' ,-. ,-. |- ,-. . ,-.   '  | ,-. ,-. . ,
+	|   . ,-| | | |  ,-| | | |      | ,-| |   |/
+	`---' `-^ |-' `' `-^ ' ' '      | `-^ `-' |\
+	          |                  /  |         ' `
+	          '                  `--'
+	          captain jack audio device
+	         github.com/qix-/captainjack
+
+	        copyright (c) 2016 josh junon
+	        released under the MIT license
+*/
+
 #include <CoreAudio/AudioServerPlugIn.h>
 #include <cstdint>
 #include <dispatch/dispatch.h>
