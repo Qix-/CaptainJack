@@ -44,6 +44,6 @@ sudo chmod 0600 /Library/LaunchDaemons/me.junon.CaptainJack.plist
 sudo launchctl bootstrap system /Library/LaunchDaemons/me.junon.CaptainJack.plist
 
 echo "restarting core audio"
-kill_audio &>dev || : # we do this both before and after because coreaudiod doesn't like to de-register devices :)
+kill_audio &>/dev/null || : # we do this both before and after because coreaudiod doesn't like to de-register devices :)
 
 echo "installed successfully"
