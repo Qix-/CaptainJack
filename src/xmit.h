@@ -37,6 +37,7 @@
 	in the daemon to process the message.
 */
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 typedef struct {
@@ -67,6 +68,6 @@ void CaptainJack_RegisterXmitterClient(CaptainJack_Xmitter *);
 
 	NOTE: this is for the daemon!
 */
-void CaptainJack_TickXmitter(void);
+bool CaptainJack_TickXmitter(void);
 
 #endif
