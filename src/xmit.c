@@ -253,7 +253,7 @@ size_t GetBytesAvailable(void) {
 }
 
 bool ReadMessage(void *out, size_t length) {
-	ssize_t nread = read(gSocket, &out, length);
+	ssize_t nread = read(gSocket, out, length);
 	if (nread == -1) {
 		syslog(LOG_ERR, "ReadMessage: error reading message: %s", strerror(errno));
 		return false;
