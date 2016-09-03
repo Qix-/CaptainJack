@@ -32,7 +32,7 @@ sudo launchctl bootout system /Library/LaunchDaemons/me.junon.CaptainJack.plist 
 
 echo "installing captain jack daemon"
 sudo mkdir -p /opt/captain-jack
-sudo cp build/captain-jack-daemon /opt/captain-jack/daemon
+sudo cp build/src/captain-jack-daemon /opt/captain-jack/daemon
 
 echo "chowning daemon binary"
 sudo chown -R root:wheel /opt/captain-jack/daemon

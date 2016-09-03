@@ -13,12 +13,14 @@
 */
 
 #include <CoreAudio/AudioServerPlugIn.h>
-#include <stdint.h>
 #include <dispatch/dispatch.h>
 #include <jack/jack.h>
 #include <mach/mach_time.h>
 #include <pthread.h>
+#include <stdint.h>
 #include <sys/syslog.h>
+
+#include "xmit.h"
 
 #define DebugMsg(inFormat, ...) syslog(LOG_NOTICE, inFormat, ## __VA_ARGS__)
 
@@ -86,7 +88,7 @@ static bool                     gMute_Output_Master_Value       = false;
 static UInt32                   gDataSource_Input_Master_Value  = 0;
 static UInt32                   gDataSource_Output_Master_Value = 0;
 
-
+static CaptainJack_Xmitter     *gXmitter                        = 0;
 
 void               *CaptainJack_Create(CFAllocatorRef inAllocator, CFUUIDRef inRequestedTypeUUID);
 static HRESULT      CaptainJack_QueryInterface(void *inDriver, REFIID inUUID, LPVOID *outInterface);
@@ -254,6 +256,8 @@ static OSStatus CaptainJack_Initialize(AudioServerPlugInDriverRef inDriver, Audi
 	setlogmask(0);
 	syslog(LOG_NOTICE, "Captain Jack is sailing the seas!");
 
+	gXmitter = CaptainJack_GetXmitterServer();
+
 	if (inDriver != gAudioServerPlugInDriverRef) {
 		DebugMsg("CaptainJack_Initialize: bad driver reference");
 		return kAudioHardwareBadObjectError;
@@ -337,6 +341,8 @@ static OSStatus CaptainJack_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
 		DebugMsg("CaptainJack_AddDeviceClient: bad device ID");
 		return kAudioHardwareBadObjectError;
 	}
+
+	gXmitter->do_client_connect(inClientInfo->mProcessID);
 
 	return 0;
 }
