@@ -4254,6 +4254,8 @@ static OSStatus CaptainJack_StartIO(AudioServerPlugInDriverRef inDriver, AudioOb
 		++gDevice_IOIsRunning;
 	}
 
+	gXmitter->do_client_enable_io(inClientID);
+
 	//  unlock the state lock
 	pthread_mutex_unlock(&gPlugIn_StateMutex);
 	return theAnswer;
@@ -4291,6 +4293,8 @@ static OSStatus CaptainJack_StopIO(AudioServerPlugInDriverRef inDriver, AudioObj
 		//  IO is still running, so just bump the counter
 		--gDevice_IOIsRunning;
 	}
+
+	gXmitter->do_client_disable_io(inClientID);
 
 	//  unlock the state lock
 	pthread_mutex_unlock(&gPlugIn_StateMutex);

@@ -55,6 +55,16 @@ typedef struct {
 		called when an audio client disconnects
 	*/
 	void (*do_client_disconnect)(unsigned int, pid_t);
+
+	/*
+		called when a client enables their I/O stream
+	*/
+	void (*do_client_enable_io)(unsigned int);
+
+	/*
+		called when a client disables their I/O stream
+	*/
+	void (*do_client_disable_io)(unsigned int);
 } CaptainJack_Xmitter;
 
 /*

@@ -31,12 +31,18 @@ typedef enum {
 	XMPC_READY,
 	XMPC_NEW_CLIENT,
 	XMPC_CLIENT_DISCONNECT,
+	XMPC_CLIENT_ENABLE_IO,
+	XMPC_CLIENT_DISABLE_IO,
 } Proto_MessageId;
 
 typedef struct {
 	unsigned int                             cid;
 	pid_t                                    pid;
-} Proto_PIDMessage;
+} Proto_PIDCIDMessage;
+
+typedef struct {
+	unsigned int                             cid;
+} Proto_CIDMessage;
 
 static int                  gSocket              = -1;
 static int                  gPeerSocket          = -1;
@@ -187,19 +193,31 @@ static void Send_DeviceReady(void) {
 }
 
 static void Send_NewClient(unsigned int cid, pid_t pid) {
-	Proto_PIDMessage msg = { cid, pid };
+	Proto_PIDCIDMessage msg = { cid, pid };
 	SendMessage(XMPC_NEW_CLIENT, &msg, sizeof(msg));
 }
 
 static void Send_DCClient(unsigned int cid, pid_t pid) {
-	Proto_PIDMessage msg = { cid, pid };
+	Proto_PIDCIDMessage msg = { cid, pid };
 	SendMessage(XMPC_CLIENT_DISCONNECT, &msg, sizeof(msg));
+}
+
+static void Send_ClientEnableIO(unsigned int cid) {
+	Proto_CIDMessage msg = { cid };
+	SendMessage(XMPC_CLIENT_ENABLE_IO, &msg, sizeof(msg));
+}
+
+static void Send_ClientDisableIO(unsigned int cid) {
+	Proto_CIDMessage msg = { cid };
+	SendMessage(XMPC_CLIENT_DISABLE_IO, &msg, sizeof(msg));
 }
 
 static CaptainJack_Xmitter gXmitterServer = {
 	&Send_DeviceReady,
 	&Send_NewClient,
 	&Send_DCClient,
+	&Send_ClientEnableIO,
+	&Send_ClientDisableIO,
 };
 
 CaptainJack_Xmitter * CaptainJack_GetXmitterServer(void) {
@@ -281,18 +299,43 @@ bool CaptainJack_TickXmitter(void) {
 	case XMPC_READY:
 		gXmitterClient->do_device_ready();
 		break;
-	case XMPC_NEW_CLIENT:
-		if (available < sizeof(Proto_PIDMessage)) {
+	case XMPC_NEW_CLIENT: {
+		if (available < sizeof(Proto_PIDCIDMessage)) {
 			return true;
 		}
 
-		Proto_PIDMessage msg;
+		Proto_PIDCIDMessage msg;
 		if (!ReadMessage(&msg, sizeof(msg))) {
 			return false;
 		}
 
 		gXmitterClient->do_client_connect(msg.cid, msg.pid);
 		break;
+	}
+	case XMPC_CLIENT_ENABLE_IO: {
+		if (available < sizeof(Proto_CIDMessage)) {
+			return true;
+		}
+
+		Proto_CIDMessage msg;
+		if (!ReadMessage(&msg, sizeof(msg))) {
+			return false;
+		}
+
+		gXmitterClient->do_client_enable_io(msg.cid);
+	}
+	case XMPC_CLIENT_DISABLE_IO: {
+		if (available < sizeof(Proto_CIDMessage)) {
+			return true;
+		}
+
+		Proto_CIDMessage msg;
+		if (!ReadMessage(&msg, sizeof(msg))) {
+			return false;
+		}
+
+		gXmitterClient->do_client_disable_io(msg.cid);
+	}
 	default:
 		syslog(LOG_NOTICE, "CaptainJack_TickXmitter: encountered unknown xmit message header: %d", gTickHeader);
 		result = false;
