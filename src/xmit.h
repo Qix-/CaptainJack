@@ -50,6 +50,11 @@ typedef struct {
 		called when a new audio client connects
 	*/
 	void (*do_client_connect)(pid_t);
+
+	/*
+		called when an audio client disconnects
+	*/
+	void (*do_client_disconnect)(pid_t);
 } CaptainJack_Xmitter;
 
 /*

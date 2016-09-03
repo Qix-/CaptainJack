@@ -32,9 +32,14 @@ static void on_new_client(pid_t pid) {
 	}
 }
 
+static void on_client_disconnect(pid_t pid) {
+	syslog(LOG_NOTICE, "client disconnected: %u", pid);
+}
+
 static CaptainJack_Xmitter xmitterClient = {
 	&on_ready,
 	&on_new_client,
+	&on_client_disconnect,
 };
 
 int main(void) {

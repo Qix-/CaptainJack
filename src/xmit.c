@@ -30,11 +30,12 @@ typedef enum {
 	XMPC_NONE = 0,
 	XMPC_READY,
 	XMPC_NEW_CLIENT,
+	XMPC_CLIENT_DISCONNECT,
 } Proto_MessageId;
 
 typedef struct {
 	pid_t                                    pid;
-} Proto_NewClient;
+} Proto_PIDMessage;
 
 static int                  gSocket              = -1;
 static int                  gPeerSocket          = -1;
@@ -185,13 +186,19 @@ static void Send_DeviceReady(void) {
 }
 
 static void Send_NewClient(pid_t pid) {
-	Proto_NewClient msg = { pid };
+	Proto_PIDMessage msg = { pid };
 	SendMessage(XMPC_NEW_CLIENT, &msg, sizeof(msg));
+}
+
+static void Send_DCClient(pid_t pid) {
+	Proto_PIDMessage msg = { pid };
+	SendMessage(XMPC_CLIENT_DISCONNECT, &msg, sizeof(msg));
 }
 
 static CaptainJack_Xmitter gXmitterServer = {
 	&Send_DeviceReady,
 	&Send_NewClient,
+	&Send_DCClient,
 };
 
 CaptainJack_Xmitter * CaptainJack_GetXmitterServer(void) {
@@ -274,11 +281,11 @@ bool CaptainJack_TickXmitter(void) {
 		gXmitterClient->do_device_ready();
 		break;
 	case XMPC_NEW_CLIENT:
-		if (available < sizeof(Proto_NewClient)) {
+		if (available < sizeof(Proto_PIDMessage)) {
 			return true;
 		}
 
-		Proto_NewClient msg;
+		Proto_PIDMessage msg;
 		if (!ReadMessage(&msg, sizeof(msg))) {
 			return false;
 		}
