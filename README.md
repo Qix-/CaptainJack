@@ -14,6 +14,8 @@
 
 ---
 
+**Captain Jack is still under development!**
+
 # Captain Jack
 
 Captain Jack is a [JACK](http://jackaudio.org)-enabled audio device for OS/X.
