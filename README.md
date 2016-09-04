@@ -50,9 +50,17 @@ $ sudo make start
 ```
 
 ## Developing
+### Debugging
+Use `Console.app` (in /Applications/Utilities). Select `system.log` on the side
+and filter for `CaptainJack`.
+
+All daemon log messages have the `CaptainJack` tag, and all device messages
+have the `CaptainJack-Device` tag.
+
+### Layout
 Captain Jack is made up of two pieces: the **device** and the **daemon**.
 
-### Device
+#### Device
 The Captain Jack Device is a CoreAudio HAL Plugin `.driver` bundle that uses
 the latest APIs in lieu of the deprecated AudioHardwarePlugin APIs.
 
@@ -90,12 +98,12 @@ the less-restrictive daemon process.
 > process names were very restrictive, and the device quickly turned into
 > a trampoline for audio events.
 
-### Daemon
+#### Daemon
 The Captain Jack Daemon is a user-space `launchd` LaunchDaemon that relays
 Xmit-RPC'd audio data from the device to JACK. It also manages a light state
 for whatever might be necessary to track (e.g. client name => PID map, etc).
 
-### Xmit
+#### Xmit
 The device and daemon communicate over a very opaque and light network layer
 dubbed Xmit (see `src/xmit.c`) that uses read buffer polling to achieve
 asynchronicity. Since it uses the TCP protocol, there is little chance of
