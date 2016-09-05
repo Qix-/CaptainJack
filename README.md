@@ -14,7 +14,7 @@
 
 ---
 
-**Captain Jack is still under development!**
+**I've halted production on Captain Jack until JACK has improved. See #3.**
 
 # Captain Jack
 
