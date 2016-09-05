@@ -12,6 +12,7 @@
 	        released under the MIT license
 */
 
+#include <jack/jack.h>
 #include <libproc.h>
 #include <stdbool.h>
 #include <sys/syslog.h>
@@ -52,12 +53,43 @@ static CaptainJack_Xmitter xmitterClient = {
 	&on_client_disables_io,
 };
 
+static void CaptainJack_LogJackError(const char *message, jack_status_t status) {
+	syslog(LOG_ERR,
+		"%s: JackFailure=%u JackInvalidOption=%u JackNameNotUnique=%u "
+		"JackServerStarted=%u JackServerFailed=%u JackServerError=%u "
+		"JackNoSuchClient=%u JackLoadFailure=%u JackInitFailure=%u "
+		"JackShmFailure=%u JackVersionError=%u JackBackendError=%u JackClientZombie=%u",
+		message,
+		status & JackFailure,
+		status & JackInvalidOption,
+		status & JackNameNotUnique,
+		status & JackServerStarted,
+		status & JackServerFailed,
+		status & JackServerError,
+		status & JackNoSuchClient,
+		status & JackLoadFailure,
+		status & JackInitFailure,
+		status & JackShmFailure,
+		status & JackVersionError,
+		status & JackBackendError,
+		status & JackClientZombie);
+}
+
 int main(void) {
 	openlog("CaptainJack", LOG_NDELAY | LOG_PERROR | LOG_PID, LOG_DAEMON);
 	setlogmask(0);
 	syslog(LOG_NOTICE, "Captain Jack is portside at ye embarcadero");
 
 	CaptainJack_RegisterXmitterClient(&xmitterClient);
+
+	jack_status_t status = 0;
+	jack_client_t *jack = jack_client_open("Captain Jack", JackNoStartServer, &status);
+	if (jack == NULL) {
+		CaptainJack_LogJackError("could not connect to server", status);
+		return EXIT_FAILURE;
+	} else {
+		syslog(LOG_NOTICE, "connected successfully");
+	}
 
 	bool shouldRunAgain = true;
 	while (shouldRunAgain) {

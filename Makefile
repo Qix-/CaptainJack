@@ -7,9 +7,11 @@ CC         := $(CC)
 CFLAGS      = -std=c99 -g3 -Wall -Wextra -Werror -Wno-unused-parameter -mmacosx-version-min=10.9
 CPPFLAGS    =
 LDFLAGS     =
+LDFLAGS_DM  = -ljack
+LDFLAGS_DV  =
 
-CFLAGS_CJ  = -bundle -framework CoreAudio -framework CoreFoundation
-CFLAGS_CJD = -framework CoreFoundation
+CFLAGS_CJ   = -bundle -framework CoreAudio -framework CoreFoundation
+CFLAGS_CJD  = -framework CoreFoundation
 DESTDIR     =
 PREFIX      = /usr/local
 PLUGINDIR   = /Library/Audio/Plug-Ins/HAL
@@ -37,10 +39,10 @@ $(BUILDDIR)/%.o: src/%.c
 # Targets
 
 $(BUILDDIR)/captain-jack-daemon: $(BUILDDIR)/captain-jack-daemon.o $(BUILDDIR)/xmit.o
-	$(CC) $(LDFLAGS) $(CFLAGS_CJD) $^ -o $@
+	$(CC) $(LDFLAGS) $(LDFLAGS_DM) $(CFLAGS_CJD) $^ -o $@
 
 $(BUILDDIR)/captain-jack: $(BUILDDIR)/captain-jack-device.o $(BUILDDIR)/xmit.o
-	$(CC) $(LDFLAGS) $(CFLAGS_CJ) $^ -o $@
+	$(CC) $(LDFLAGS) $(LDFLAGS_DV) $(CFLAGS_CJ) $^ -o $@
 
 .PHONY: all
 all: $(BUILDDIR)/captain-jack-daemon $(BUILDDIR)/captain-jack

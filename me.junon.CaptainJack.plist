@@ -5,7 +5,7 @@
 	<key>Label</key>
 	<string>me.junon.CaptainJack</string>
 	<key>Program</key>
-	<string>/opt/captain-jack/daemon</string>
+	<string>/usr/local/sbin/captain-jack-daemon</string>
 	<key>KeepAlive</key>
 	<true />
 	<key>ProcessType</key>
