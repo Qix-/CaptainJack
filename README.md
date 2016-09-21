@@ -27,7 +27,7 @@ audio ports.
 
 ## Installing
 
-You must have an implmementation of JACK installed on the system. You can
+You must have an implementation of JACK installed on the system. You can
 (and should) do this by downloading and building the latest source from either
 [JACK1](https://github.com/jackaudio/jack1.git) or
 [JACK2](https://github.com/jackaudio/jack2.git), though it's worth mentioning
